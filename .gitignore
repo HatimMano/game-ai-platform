@@ -1,0 +1,18 @@
+# Fichiers système
+.DS_Store
+
+# Environnement virtuel
+venv/
+__pycache__/
+*.pyc
+
+# Fichiers temporaires
+*.log
+*.out
+
+# Fichiers générés par l'utilisateur
+*.csv
+*.json
+
+# Modèles sauvegardés
+models/*/model.pkl

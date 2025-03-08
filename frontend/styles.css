@@ -1,0 +1,92 @@
+/* Style pour le corps de la page */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: black; /* Fond noir */
+    color: white; /* Texte en blanc pour contraster */
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Style pour le conteneur du formulaire */
+#authContainer {
+    position: absolute; /* Position absolue pour placer le formulaire */
+    top: 20px; /* Espacement depuis le haut */
+    left: 20px; /* Espacement depuis la gauche */
+    background-color: rgba(0, 0, 0, 0.7); /* Fond semi-transparent sombre */
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); /* Ombre légère blanche */
+    z-index: 10; /* S'assurer que le formulaire est au-dessus du canvas */
+}
+
+/* Style pour le formulaire */
+#authForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Espacement entre les éléments */
+}
+
+#authForm h2 {
+    margin: 0 0 10px 0; /* Marge pour le titre */
+    font-size: 18px;
+    color: white; /* Texte en blanc */
+}
+
+#authForm input {
+    padding: 8px;
+    border: 1px solid #555; /* Bordure grise */
+    border-radius: 5px;
+    background-color: #333; /* Fond sombre pour les inputs */
+    color: white; /* Texte en blanc */
+}
+
+#authForm button {
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Transition fluide */
+}
+
+#authForm button:hover {
+    background-color: #0056b3;
+}
+
+#authMessage {
+    color: #ff4444; /* Rouge pour les messages d'erreur */
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Style pour le canvas */
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background-color: #222; /* Fond sombre pour le canvas */
+    border: 2px solid #00ffcc; /* Bordure cyan */
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); /* Effet de lumière autour du canvas */
+}
+
+/* Effet de lumière animé (optionnel) */
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 204, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+    }
+}
+
+#gameCanvas {
+    animation: glow 3s infinite; /* Application de l'animation */
+}

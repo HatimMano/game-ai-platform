@@ -1,0 +1,46 @@
+.
+├── agents
+│   ├── base_agent.py
+│   ├── dqn_agent
+│   └── q_learning_agent
+│       └── q_learning_agent.py
+├── arborescence.txt
+├── backend
+│   ├── dashboard.py
+│   └── server.py
+├── config
+│   └── settings.py
+├── data
+│   └── q_learning
+│       ├── log.txt
+│       ├── predictions.json
+│       └── training_scores.csv
+├── frontend
+│   ├── index.html
+│   ├── snake.js
+│   └── styles.css
+├── games
+│   ├── base_env.py
+│   ├── snake
+│   │   └── snake_env.py
+│   └── tango
+├── main.py
+├── models
+│   ├── dqn
+│   ├── model_manager.py
+│   └── q_learning
+│       ├── model.pkl
+│       ├── params.json
+│       ├── predict.py
+│       ├── q_table.pkl
+│       └── train.py
+├── requirements.txt
+└── tests
+    ├── snake
+    │   ├── test_predict.py
+    │   ├── test_q_learning.py
+    │   ├── test_snake_env.py
+    │   └── test_train.py
+    └── tango
+
+18 directories, 26 files
