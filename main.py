@@ -24,14 +24,14 @@ def train():
     agent = agent_class(env)
 
     # Charger les hyperparamètres
-    # Récupération automatique du gestionnaire de modèle
     manager_class = BaseModelManager.get_manager_class(agent_config["version_agent"].lower())
     model_manager = manager_class()
     model_path = get_model_path(agent_config["version_agent"].lower())
 
     if os.path.exists(model_path):
         print(f"Chargement du modèle depuis : {model_path}")
-        agent.load_model(model_manager.load_model(model_path))
+        model = model_manager.load_model(model_path)
+        agent.set_model(model)
     else:
         print("Aucun modèle existant. Initialisation d'un nouvel agent.")
 
@@ -60,11 +60,13 @@ def test():
     agent = agent_class(env)
     # Charger le modèle entraîné
     agent_config = get_agent_config()
-    model_path = get_model_path(agent)
     model_path = get_model_path(agent_config["version_agent"].lower())
+    manager_class = BaseModelManager.get_manager_class(agent_config["version_agent"].lower())
+    model_manager = manager_class()
     if os.path.exists(model_path):
         print(f"Chargement du modèle depuis : {model_path}")
-        agent.load(model_path)
+        model = model_manager.load_model(model_path)
+        agent.set_model(model)
     else:
         print(model_path)
         print("Modèle introuvable. Lance d'abord l'entraînement.")

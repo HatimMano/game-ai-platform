@@ -1,4 +1,4 @@
-# 🏆 Game AI Platform  
+# 🏆 GAIP : Game AI Platform  
 **Plateforme d'entraînement d'agents IA sur plusieurs jeux**  
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue) ![Status](https://img.shields.io/badge/Status-Active-green) ![License](https://img.shields.io/badge/License-MIT-yellow)

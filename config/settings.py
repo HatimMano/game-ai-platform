@@ -26,8 +26,10 @@ GENERAL_CONFIG = {
 #Configuration du serveur
 SERVER_CONFIG = {
     "host": "localhost",
-    "port": 8000
+    "port": 8000,
+    "use_websocket": True,   # True → utilise WebSocket, False → utilise HTTP uniquement
 }
+
 
 GAME_CONFIG = {
     "selected_game": "snake",  # On peut changer pour un autre jeu plus tard

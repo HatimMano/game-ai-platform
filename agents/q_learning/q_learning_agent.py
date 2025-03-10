@@ -6,7 +6,6 @@ import pickle
 import pandas as pd # type: ignore
 from collections import defaultdict
 from config.settings import get_params, DATA_DIR
-from models.model_manager import BaseModelManager
 
 
 # Ajouter le dossier racine `Snake_V3/` au PYTHONPATH pour éviter ModuleNotFoundError

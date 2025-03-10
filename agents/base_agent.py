@@ -4,10 +4,6 @@ class BaseAgent:
     def __init__(self, env):
         self.env = env
 
-    def load_model(self, model_path):
-        """Charge un modèle selon l'implémentation spécifique de l'agent."""
-        pass
-
     @abstractmethod
     def train(self, num_episodes):
         """Entraîne l'agent sur un certain nombre d'épisodes."""
@@ -19,6 +15,8 @@ class BaseAgent:
         pass
 
     @abstractmethod
-    def load(self, model_path):
-        """Méthode générique pour charger le modèle"""
+    def set_model(self, model):
+        """Charge un modèle dans l'agent."""
         pass
+
+

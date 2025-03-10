@@ -41,8 +41,10 @@ class GameServer:
 
         # Chargement du modèle IA
         model_path = get_model_path(agent_config["version_agent"].lower())
-        self.agent.load_model(model_path)  
-
+        manager_class = BaseModelManager.get_manager_class(agent_config["version_agent"].lower())
+        model_manager = manager_class()
+        model = model_manager.load_model(model_path)
+        self.agent.set_model(model)
     async def handle_connection(self, websocket):
         """Gère la communication entre le client (frontend) et l'IA."""
         async for message in websocket:
