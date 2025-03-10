@@ -1,25 +1,34 @@
-import asyncio
-import websockets #type: ignore
 import json
-import numpy as np
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import webbrowser
 from importlib import import_module
-from config.settings import get_server_config, get_model_path, get_game_config, get_agent_config, AGENT_CONFIG
+from fastapi import FastAPI, WebSocket
+from pydantic import BaseModel
+import numpy as np
+from config.settings import get_server_config, get_model_path, get_game_config, get_agent_config
 from models.model_manager import BaseModelManager
 
+# Ajout du chemin du projet pour les imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# Initialisation de FastAPI
+app = FastAPI()
+
+# Modèle Pydantic pour valider les données reçues via WebSocket
+class GameState(BaseModel):
+    state: dict  # L'état du jeu sous forme de dictionnaire
+
+class ActionResponse(BaseModel):
+    direction: str  # La réponse de l'agent sous forme de direction
 
 def open_game():
     """Ouvre automatiquement index.html dans le navigateur."""
     frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/index.html"))
     webbrowser.open(f"file://{frontend_path}")
 
-
 class GameServer:
-    """Serveur WebSocket pour gérer les connexions avec le client, adaptable à plusieurs jeux et modèles IA."""
+    """Serveur pour gérer les connexions avec le client, adaptable à plusieurs jeux et modèles IA."""
 
     def __init__(self):
         # Récupération des configurations serveur
@@ -27,7 +36,7 @@ class GameServer:
         self.host = server_config["host"]
         self.port = server_config["port"]
 
-        # Chargement l'environnement de jeu
+        # Chargement de l'environnement de jeu
         game_config = get_game_config()
         env_module = import_module(game_config["module"])
         env_class = getattr(env_module, game_config["class"])
@@ -45,53 +54,46 @@ class GameServer:
         model_manager = manager_class()
         model = model_manager.load_model(model_path)
         self.agent.set_model(model)
-    async def handle_connection(self, websocket):
-        """Gère la communication entre le client (frontend) et l'IA."""
+
+    async def handle_websocket_connection(self, websocket: WebSocket):
+        """Gère la communication WebSocket entre le client (frontend) et l'IA."""
+        await websocket.accept()
         async for message in websocket:
-            game_state = json.loads(message)
+            # Reçoit l'état du jeu et le valide avec Pydantic
+            game_state = GameState(**json.loads(message))
 
             # Extraction de l'état de manière générique
-            state = self.env.to_tensor(game_state)
+            state = self.env.to_tensor(game_state.state)
 
             # Choix de l'action par l'agent
             action = self.agent.choose_action(state)
 
             # Envoi de l'action au client
             actions = self.env.get_available_actions()
-            action_response = {"direction": actions[action]}
-            await websocket.send(json.dumps(action_response))
+            action_response = ActionResponse(direction=actions[action])
+            await websocket.send_json(action_response.dict())
 
-    async def start_server(self):
-        """Démarre le serveur WebSocket."""
-        async with websockets.serve(self.handle_connection, self.host, self.port):
-            await asyncio.Future()  # Run forever
+# Initialisation du serveur
+server = GameServer()
 
+# Endpoint WebSocket pour la communication en temps réel
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await server.handle_websocket_connection(websocket)
 
-if __name__ == "__main__":
-    server = GameServer()
+# Endpoint HTTP pour ouvrir le jeu
+@app.get("/open-game")
+def open_game_endpoint():
     open_game()
-    try:
-        asyncio.run(server.start_server())
-    except KeyboardInterrupt:
-        print("Serveur arrêté par l'utilisateur.")
+    return {"message": "Jeu ouvert dans le navigateur."}
 
+# Endpoint HTTP pour obtenir la configuration du serveur
+@app.get("/server-config")
+def get_server_config_endpoint():
+    return get_server_config()
 
-
-
-def real_time_learning(action,state,self):
-    # Exécuter l'action dans l'environnement et récupérer le nouvel état
-    next_state, reward, done = self.env.step(action)
-
-    # Met à jour la Q-table
-    state_tuple = tuple(state)
-    next_state_tuple = tuple(next_state)
-
-    best_next_action = np.argmax(self.agent.Q_table[next_state_tuple])
-    td_target = reward + self.agent.gamma * self.agent.Q_table[next_state_tuple][best_next_action]
-    td_error = td_target - self.agent.Q_table[state_tuple][action]
-    self.agent.Q_table[state_tuple][action] += self.agent.alpha * td_error
-
-    # Sauvegarde la Q-table après chaque mort du serpent
-    if done:
-        BaseModelManager.save_model(self.agent.Q_table)
-        print(" Partie terminée, Q-table sauvegardée.")
+# Point d'entrée pour exécuter le serveur
+if __name__ == "__main__":
+    import uvicorn
+    open_game()
+    uvicorn.run(app, host=server.host, port=server.port)
