@@ -41,9 +41,11 @@ const useWebSocket = (url: string) => {
 
   const sendGameState = (state: GameState) => {
     if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+      console.log("Sending game state:", state); // ✅ Vérification
       socket.current.send(JSON.stringify(state));
     }
   };
+  
 
   return { gameState, sendGameState };
 };

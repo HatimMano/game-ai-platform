@@ -1,10 +1,20 @@
 import React, { useState } from "react";
 
-const EnvironmentController: React.FC = () => {
+interface GameState {
+  snake: { x: number; y: number }[];
+  food: { x: number; y: number };
+  score: number;
+}
+
+interface Props {
+  sendGameState: (state: GameState) => void;
+}
+
+const EnvironmentController: React.FC<Props> = ({ sendGameState }) => {
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [isInferenceActive, setIsInferenceActive] = useState(false);
 
-  // 👉 Fonction pour démarrer l'entraînement
+  // ✅ Fonction pour démarrer l'entraînement
   const handleStartTraining = async () => {
     setIsTrainingActive(true);
     setIsInferenceActive(false);
@@ -13,12 +23,19 @@ const EnvironmentController: React.FC = () => {
         method: "POST",
       });
       console.log(await response.json());
+
+      console.log("📤 Sending initial game state for training");
+      sendGameState({
+        snake: [{ x: 0, y: 0 }],
+        food: { x: 5, y: 5 },
+        score: 0,
+      });
     } catch (error) {
-      console.error("Erreur lors du démarrage de l'entraînement :", error);
+      console.error("❌ Error starting training:", error);
     }
   };
 
-  // 👉 Fonction pour arrêter l'entraînement
+  // ✅ Fonction pour arrêter l'entraînement
   const handleStopTraining = async () => {
     setIsTrainingActive(false);
     try {
@@ -27,11 +44,11 @@ const EnvironmentController: React.FC = () => {
       });
       console.log(await response.json());
     } catch (error) {
-      console.error("Erreur lors de l'arrêt de l'entraînement :", error);
+      console.error("❌ Error stopping training:", error);
     }
   };
 
-  // 👉 Fonction pour mettre en pause l'entraînement
+  // ✅ Fonction pour mettre en pause l'entraînement
   const handlePauseTraining = async () => {
     try {
       const response = await fetch("http://localhost:8000/training/pause", {
@@ -39,11 +56,11 @@ const EnvironmentController: React.FC = () => {
       });
       console.log(await response.json());
     } catch (error) {
-      console.error("Erreur lors de la pause de l'entraînement :", error);
+      console.error("❌ Error pausing training:", error);
     }
   };
 
-  // 👉 Fonction pour sauvegarder le modèle
+  // ✅ Fonction pour sauvegarder le modèle
   const handleSaveModel = async () => {
     try {
       const response = await fetch("http://localhost:8000/training/save", {
@@ -51,11 +68,11 @@ const EnvironmentController: React.FC = () => {
       });
       console.log(await response.json());
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde du modèle :", error);
+      console.error("❌ Error saving model:", error);
     }
   };
 
-  // 👉 Fonction pour démarrer l'inférence
+  // ✅ Fonction pour démarrer l'inférence
   const handleStartInference = async () => {
     setIsInferenceActive(true);
     setIsTrainingActive(false);
@@ -64,12 +81,19 @@ const EnvironmentController: React.FC = () => {
         method: "POST",
       });
       console.log(await response.json());
+
+      console.log("📤 Sending initial game state for inference");
+      sendGameState({
+        snake: [{ x: 0, y: 0 }],
+        food: { x: 5, y: 5 },
+        score: 0,
+      });
     } catch (error) {
-      console.error("Erreur lors du démarrage de l'inférence :", error);
+      console.error("❌ Error starting inference:", error);
     }
   };
 
-  // 👉 Fonction pour arrêter l'inférence
+  // ✅ Fonction pour arrêter l'inférence
   const handleStopInference = async () => {
     setIsInferenceActive(false);
     try {
@@ -78,11 +102,11 @@ const EnvironmentController: React.FC = () => {
       });
       console.log(await response.json());
     } catch (error) {
-      console.error("Erreur lors de l'arrêt de l'inférence :", error);
+      console.error("❌ Error stopping inference:", error);
     }
   };
 
-  // 👉 Fonction pour mettre en pause l'inférence
+  // ✅ Fonction pour mettre en pause l'inférence
   const handlePauseInference = async () => {
     try {
       const response = await fetch("http://localhost:8000/inference/pause", {
@@ -90,7 +114,7 @@ const EnvironmentController: React.FC = () => {
       });
       console.log(await response.json());
     } catch (error) {
-      console.error("Erreur lors de la pause de l'inférence :", error);
+      console.error("❌ Error pausing inference:", error);
     }
   };
 

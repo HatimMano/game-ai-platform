@@ -16,20 +16,22 @@ const EnvironmentVisualization: React.FC<Props> = ({ gameState }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
-  
-    if (canvas && context && gameState) { // ✅ Vérification ajoutée ici
+
+    console.log('GameState in EnvironmentVisualization:', gameState); // ✅ Vérification
+
+    if (canvas && context && gameState) {
       const tileSize = canvas.width / 10;
-  
-      // Efface le canvas avant de dessiner
+
+      // ✅ Efface le canvas avant de dessiner
       context.clearRect(0, 0, canvas.width, canvas.height);
-  
-      // 🟢 Dessine le serpent
+
+      // ✅ Dessine le serpent
       context.fillStyle = 'green';
       gameState.snake.forEach(segment => {
         context.fillRect(segment.x * tileSize, segment.y * tileSize, tileSize, tileSize);
       });
-  
-      // 🍎 Dessine la nourriture
+
+      // ✅ Dessine la nourriture
       context.fillStyle = 'red';
       context.fillRect(
         gameState.food.x * tileSize,
@@ -37,14 +39,15 @@ const EnvironmentVisualization: React.FC<Props> = ({ gameState }) => {
         tileSize,
         tileSize
       );
-  
-      // 🏆 Affiche le score
+
+      // ✅ Affiche le score
       context.fillStyle = 'white';
       context.font = '20px Arial';
       context.fillText(`Score: ${gameState.score}`, 10, 30);
+    } else {
+      console.warn("Canvas or context not initialized"); // ✅ Vérification d'erreur
     }
-  }, [gameState]);
-  
+  }, [gameState]); // ✅ Mise à jour à chaque changement d'état
 
   return (
     <canvas

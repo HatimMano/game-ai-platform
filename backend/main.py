@@ -7,10 +7,22 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.settings import get_game_config, get_agent_config, get_model_path
 from backend.models.model_manager import BaseModelManager
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+
 
 app = FastAPI()
 
-# ✅ Variables globales pour gérer l'état du training/inférence
+# Configuration du CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Autorise toutes les origines (peut être restreint)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ✅ Variables globales
 training_task = None
 inference_task = None
 pause_training = False
@@ -82,16 +94,21 @@ async def pause_inference_func():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        game_state = await websocket.receive_json()
-        action = handle_game_state(game_state)
-        await websocket.send_json(action)
+    print("✅ WebSocket connection established")  # Vérification connexion
+    try:
+        while True:
+            game_state = await websocket.receive_json()
+            print(f"📥 Received from WebSocket: {game_state}")  # 🔥 Vérification réception
+            action = handle_game_state(game_state)
+            await websocket.send_json(action)
+            print(f"📤 Sent to WebSocket: {action}")  # 🔥 Vérification envoi
+    except Exception as e:
+        print(f"❌ WebSocket error: {e}")
 
 # ✅ Fonction pour gérer l'état du jeu
 def handle_game_state(game_state):
-    # Génère une réponse d'action en fonction de l'état du jeu
-    state = game_state["state"]
-    action = {"direction": "UP"}  # Exemple simple
+    state = game_state.get("state")
+    action = {"direction": "UP"}  # Exemple simple d'action
     return action
 
 # ✅ Fonction d'entraînement
@@ -100,7 +117,6 @@ async def train_model():
     agent_config = get_agent_config()
     game_config = get_game_config()
 
-    # Charger le modèle et l'agent
     env_module = import_module(game_config["module"])
     env_class = getattr(env_module, game_config["class"])
     env = env_class()
@@ -117,7 +133,6 @@ async def train_model():
         model = model_manager.load_model(model_path)
         agent.set_model(model)
 
-    # 🔁 Boucle d'entraînement
     num_episodes = agent_config.get("num_episodes", 10000)
     for episode in range(num_episodes):
         if pause_training:
@@ -130,10 +145,10 @@ async def train_model():
             action = agent.choose_action(state)
             state, reward, done = env.step(action)
 
-        print(f"Episode {episode + 1} terminé")
+        print(f"✅ Episode {episode + 1} terminé")
 
-    # ✅ Sauvegarder le modèle
     model_manager.save_model(agent.get_model(), model_path)
+    print("✅ Modèle sauvegardé")
 
 # ✅ Fonction d'inférence
 async def run_inference():
@@ -141,7 +156,6 @@ async def run_inference():
     agent_config = get_agent_config()
     game_config = get_game_config()
 
-    # Charger le modèle et l'agent
     env_module = import_module(game_config["module"])
     env_class = getattr(env_module, game_config["class"])
     env = env_class()
@@ -158,7 +172,6 @@ async def run_inference():
         model = model_manager.load_model(model_path)
         agent.set_model(model)
 
-    # 🔁 Boucle d'inférence
     for episode in range(10):
         if pause_inference:
             await asyncio.sleep(1)
@@ -170,9 +183,31 @@ async def run_inference():
             action = agent.choose_action(state)
             state, reward, done = env.step(action)
 
-        print(f"Inference {episode + 1} terminé")
+        print(f"✅ Inference {episode + 1} terminé")
+
+# ✅ Sauvegarder le modèle
+@app.post("/training/save")
+async def save_model():
+    agent_config = get_agent_config()
+    game_config = get_game_config()
+    model_path = get_model_path(agent_config["version_agent"].lower())
+    manager_class = BaseModelManager.get_manager_class(agent_config["version_agent"].lower())
+    model_manager = manager_class()
+    agent_module = import_module(agent_config["module"])
+    agent_class = getattr(agent_module, agent_config["class"])
+    env_module = import_module(game_config["module"])
+    env_class = getattr(env_module, game_config["class"])
+    env = env_class()
+    agent = agent_class(env)
+
+    if training_task and not training_task.done():
+        model_manager.save_model(agent.get_model(), model_path)
+        return {"status": "Model saved"}
+    else:
+        return {"status": "No active training to save"}
+
 
 # ✅ Démarrage du serveur
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn # type: ignore
     uvicorn.run(app, host="0.0.0.0", port=8000)

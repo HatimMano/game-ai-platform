@@ -1,12 +1,12 @@
-from fastapi import FastAPI, WebSocket, BackgroundTasks
-from pydantic import BaseModel
+from fastapi import FastAPI, WebSocket, BackgroundTasks # type: ignore
+from pydantic import BaseModel # type: ignore
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.settings import get_game_config, get_agent_config, get_model_path
-from models.model_manager import BaseModelManager
 from importlib import import_module
 import asyncio
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config.settings import get_game_config, get_agent_config, get_model_path
+from backend.models.model_manager import BaseModelManager
 
 app = FastAPI()
 
@@ -174,5 +174,5 @@ async def run_inference():
 
 # ✅ Démarrage du serveur
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn # type: ignore
+    uvicorn.run(app, host="0.0.0.0", port=7000)
