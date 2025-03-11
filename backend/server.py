@@ -3,14 +3,14 @@ import os
 import sys
 import webbrowser
 from importlib import import_module
-from fastapi import FastAPI, WebSocket
-from pydantic import BaseModel
+# Ajout du chemin du projet pour les imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import numpy as np
 from config.settings import get_server_config, get_model_path, get_game_config, get_agent_config
 from models.model_manager import BaseModelManager
+from fastapi import FastAPI, WebSocket # type: ignore
+from pydantic import BaseModel # type: ignore
 
-# Ajout du chemin du projet pour les imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Initialisation de FastAPI
 app = FastAPI()
@@ -94,6 +94,6 @@ def get_server_config_endpoint():
 
 # Point d'entrée pour exécuter le serveur
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn # type: ignore
     open_game()
     uvicorn.run(app, host=server.host, port=server.port)
