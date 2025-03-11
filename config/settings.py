@@ -2,10 +2,11 @@ import os
 import json
 
 #Définition des chemins vers les principaux dossiers du projet
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # Dossier parent (Snake_V3)
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODELS_DIR = os.path.join(BASE_DIR, "backend", "models")
+DATA_DIR = os.path.join(BASE_DIR, "backend", "data")
+LOGS_DIR = os.path.join(BASE_DIR, "backend", "logs")
+
 
 #Versions de modèles disponibles
 AVAILABLE_MODELS = ["q_learning", "dqn"]
@@ -32,25 +33,27 @@ SERVER_CONFIG = {
 
 
 GAME_CONFIG = {
-    "selected_game": "snake",  # On peut changer pour un autre jeu plus tard
+    "selected_game": "snake",
     "games": {
-        "snake": {"module": "games.snake.snake_env", "class": "SnakeEnv"},
-        "chess": {"module": "games.chess.chess_env", "class": "ChessEnv"}
+        "snake": {"module": "backend.games.snake.snake_env", "class": "SnakeEnv"},
+        "chess": {"module": "backend.games.chess.chess_env", "class": "ChessEnv"}
     }
 }
 
 AGENT_CONFIG = {
     "selected_agent": "q_learning",
     "agents": {
-        "q_learning": {"module": "agents.q_learning.q_learning_agent",
+        "q_learning": {"module": "backend.agents.q_learning.q_learning_agent",
                        "class": "QLearningAgent",
                        "version_agent": "q_learning"
         },
-            "dqn": {"module": "agents.dqn.dqn_agent", 
-                    "class": "DQNAgent",
-                    "version_agent": ""}
+        "dqn": {"module": "backend.agents.dqn.dqn_agent",
+                "class": "DQNAgent",
+                "version_agent": "dqn"
+        }
     }
-    }
+}
+
 
 
 
@@ -73,6 +76,7 @@ def get_params(version):
 #Fonction utilitaire pour obtenir le chemin du modèle sauvegardé
 def get_model_path(agent_name):
     return os.path.join(MODELS_DIR, str(agent_name), "model.pkl")
+
 
 
 
