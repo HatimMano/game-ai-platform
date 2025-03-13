@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: #3a3445;
     margin: 0;
     padding: 0;
     display: flex;
@@ -34,5 +34,9 @@ button:hover:not(:disabled) {
 }
 
 canvas {
-    border: 2px solid #000;
+    display: block;
+    margin: 0 auto;
+    background-color: #222; /* Fond sombre pour le canvas */
+    border: 2px solid #00ffcc; /* Bordure cyan */
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); 
 }

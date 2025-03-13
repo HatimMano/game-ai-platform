@@ -33,16 +33,48 @@ inference_task = None
 
 
 # Démarrage du training
+# Démarrage du training
 @app.post("/start-training")
 async def start_training(episodes: int = 1000):
     global training_active
     if training_active:
         return {"status": "Training already in progress"}
-    
+
     training_active = True
-    agent.train(episodes)
+    agent.training_active = True
+    
+    print("🚀 Début du training...")
+    asyncio.create_task(agent.train(episodes))
+    
+    return {"status": "Training started"}
+
+# Arrêt du training
+@app.post("/stop-training")
+async def stop_training():
+    global training_active
+    if not training_active:
+        return {"status": "No training in progress"}
+    
     training_active = False
-    return {"status": "Training finished"}
+    agent.stop_training()
+    
+    return {"status": "Training stopped"}
+
+# Sauvegarde du modèle
+@app.post("/save-model")
+async def save_model():
+    global training_active
+    if training_active:
+        return {"status": "Cannot save model during training"}
+
+    model_path = os.path.join("backend", "models", "q_learning", "model.pkl")
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    with open(model_path, "wb") as f:
+        pickle.dump(agent.get_model(), f)
+
+    print("💾 Model saved")
+    return {"status": "Model saved"}
+
 
 # Sauvegarde du modèle
 @app.post("/save-model")
@@ -53,6 +85,7 @@ async def save_model():
         pickle.dump(agent.get_model(), f)
     return {"status": "Model saved"}
 
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global inference_active, inference_task
@@ -61,6 +94,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         data = await websocket.receive_json()
+
         if data.get("action") == "start":
             inference_active = True
             state = tuple(env.reset())
@@ -119,14 +153,10 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("❌ Connexion WebSocket fermée par le client")
         inference_active = False
+
     except Exception as e:
         print(f"❌ WebSocket Error: {e}")
-    finally:
-        inference_active = False
-        if inference_task is not None:
-            inference_task.cancel()
-            inference_task = None
-            print(f"🚫 Tâche annulée → État du WebSocket : {websocket.client_state}")
+
 
 @app.post("/stop-inference")
 async def stop_inference():

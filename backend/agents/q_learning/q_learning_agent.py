@@ -6,6 +6,8 @@ import pickle
 import pandas as pd # type: ignore
 from collections import defaultdict
 from config.settings import get_params, DATA_DIR
+import asyncio
+
 
 
 # Ajouter le dossier racine `Snake_V3/` au PYTHONPATH pour éviter ModuleNotFoundError
@@ -27,7 +29,7 @@ class QLearningAgent(BaseAgent):
         self.Q_table = {}
         
         # Charger les hyperparamètres depuis `settings.py`
-        params = get_params(version)  # Récupère les params de v1, v2...
+        params = get_params(version)
         
         self.alpha = params["alpha"]  
         self.gamma = params["gamma"]  
@@ -36,6 +38,10 @@ class QLearningAgent(BaseAgent):
         self.epsilon_decay = params["epsilon_decay"]  
         self.Q_table = defaultdict(lambda: np.zeros(env.action_space.n))
 
+        # ✅ Variables d'état
+        self.current_episode = 0
+        self.current_state = None
+        self.training_active = False
 
     def choose_action(self, state, epsilon=None):
         """Sélectionne une action selon une stratégie epsilon-greedy."""
@@ -43,25 +49,27 @@ class QLearningAgent(BaseAgent):
         if random.uniform(0, 1) < epsilon:
             return self.env.action_space.sample()  # Exploration
         if state not in self.Q_table:
-                self.Q_table[state] = np.zeros(self.env.action_space.n)
+            self.Q_table[state] = np.zeros(self.env.action_space.n)
         return np.argmax(self.Q_table[tuple(state)])  # Exploitation
-    
 
-
-    def train(self, num_episodes, version="q_learning"):
+    async def train(self, num_episodes):
         """Entraîne l'agent sur un certain nombre d'épisodes."""
-        scores = []  # Liste des scores
+        print("🚀 Training started...")
+        self.training_active = True
+
+        # ✅ Reprendre l'état précédent s'il existe
+        episode = self.current_episode if self.current_episode else 0
+        state = self.current_state if self.current_state else tuple(self.env.reset())
         
-        for episode in range(num_episodes):
-            state = tuple(self.env.reset())
+        while self.training_active and episode < num_episodes:
             done = False
             total_reward = 0
 
-            while not done:
+            while not done and self.training_active:
                 action = self.choose_action(state)
                 next_state, reward, done = self.env.step(action)
                 next_state = tuple(next_state)
-                
+
                 if next_state not in self.Q_table:
                     self.Q_table[next_state] = np.zeros(self.env.action_space.n)
 
@@ -72,17 +80,28 @@ class QLearningAgent(BaseAgent):
                 state = next_state
                 total_reward += reward
 
+                # ✅ Ajout d'un délai pour éviter une surcharge CPU
+                await asyncio.sleep(0.01)
+
+            # ✅ Enregistrement de la progression
+            self.current_episode = episode
+            self.current_state = state
+
+            # Mise à jour de l'exploration
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-            scores.append((episode, total_reward))  # Stocke l’épisode et le score
+
+            print(f"✅ Épisode {episode} terminé - Reward: {total_reward}")
+
+            episode += 1
         
-        # Sauvegarde des scores dans `/data/v1/training_scores.csv`
-        scores_path = os.path.join(DATA_DIR, version, "training_scores.csv")
-        os.makedirs(os.path.dirname(scores_path), exist_ok=True)  # Crée le dossier s'il n'existe pas
-        df = pd.DataFrame(scores, columns=["episode", "score"])
-        df.to_csv(scores_path, index=False)
+        print("🏁 Training stopped")
 
-        print(f"Scores sauvegardés dans {scores_path}")
-
+    def stop_training(self):
+        """Arrête complètement l'entraînement."""
+        self.training_active = False
+        self.current_episode = 0
+        self.current_state = None
+        print("🛑 Training reset")
 
     def get_model(self):
         """Retourne la table Q pour la sauvegarde."""
