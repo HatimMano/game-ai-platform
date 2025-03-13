@@ -31,6 +31,7 @@ inference_active = False
 inference_task = None
 
 
+
 # Démarrage du training
 @app.post("/start-training")
 async def start_training(episodes: int = 1000):
@@ -73,11 +74,6 @@ async def websocket_endpoint(websocket: WebSocket):
             except Exception as e:
                 print(f"❌ Erreur lors de l'envoi initial : {e}")
 
-            # ✅ Fonction keep_alive définie dans le contexte local
-            async def keep_alive():
-                while inference_active and websocket.client_state == WebSocketState.CONNECTED:
-                    await asyncio.sleep(1)
-
             async def run_inference(initial_state):
                 global inference_active
                 try:
@@ -88,13 +84,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         print("🔄 Boucle en cours...")
                         action = agent.choose_action(state)
                         next_state, reward, done = env.step(action)
-
-                        if websocket.client_state == WebSocketState.CONNECTED:
-                            await websocket.send_json({
-                                "state": next_state,
-                                "reward": reward,
-                                "done": done
-                            })
+                        await websocket.send_json({
+                            "state": next_state,
+                            "reward": reward,
+                            "done": done
+                        })
 
                         state = next_state
                         if done:
@@ -111,9 +105,6 @@ async def websocket_endpoint(websocket: WebSocket):
             if inference_task is None or inference_task.done():
                 inference_task = asyncio.create_task(run_inference(state))
                 print(f"🚀 Tâche lancée : {inference_task}")
-
-                # ✅ Lance la boucle keep_alive directement dans le contexte
-                asyncio.create_task(keep_alive())
 
                 # ✅ Force FastAPI à garder le contexte ouvert
                 await asyncio.sleep(3600)

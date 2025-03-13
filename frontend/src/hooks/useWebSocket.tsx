@@ -1,21 +1,34 @@
 import { useEffect, useState, useRef } from 'react';
 
 const useWebSocket = (url: string) => {
-    const [states, setStates] = useState<number[][]>([]); // Stocke tous les états reçus
+    const [states, setStates] = useState<number[][]>([]);
     const [isConnected, setIsConnected] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
 
-    useEffect(() => {
+    const connect = (autoStart = false) => {
+        if (socketRef.current) {
+            socketRef.current.close(); // Fermer une connexion précédente s'il y en a une
+        }
+
         socketRef.current = new WebSocket(url);
 
         socketRef.current.onopen = () => {
             console.log('Connected to WebSocket');
             setIsConnected(true);
+            setStates([]); // Réinitialiser les états lors d'une nouvelle connexion
         };
+
+        if (autoStart) {
+            // ✅ Utiliser un léger timeout pour s'assurer que l'état est bien mis à jour
+            setTimeout(() => {
+                console.log('Sending start message after reconnect');
+                sendMessage({ action: 'start' });
+            }, 10); // Délai minimal pour laisser `setIsConnected(true)` se propager
+        }
 
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            setStates((prevStates) => [...prevStates, data.state]); // Ajoute le nouvel état à la file d'attente
+            setStates((prevStates) => [...prevStates, data.state]);
         };
 
         socketRef.current.onclose = () => {
@@ -26,9 +39,13 @@ const useWebSocket = (url: string) => {
         socketRef.current.onerror = (error) => {
             console.error('WebSocket error:', error);
         };
+    };
+
+    useEffect(() => {
+        connect(); // Établir la connexion au montage initial
 
         return () => {
-            socketRef.current?.close();
+            socketRef.current?.close(); // Fermer proprement lors du démontage
         };
     }, [url]);
 
@@ -38,7 +55,7 @@ const useWebSocket = (url: string) => {
         }
     };
 
-    return { states, isConnected, sendMessage };
+    return { states, isConnected, sendMessage, socketRef, connect };
 };
 
 export default useWebSocket;

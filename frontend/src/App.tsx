@@ -6,13 +6,19 @@ import useWebSocket from './hooks/useWebSocket';
 const WS_URL = 'ws://localhost:8000/ws';
 
 const App: React.FC = () => {
-    const { states, isConnected, sendMessage } = useWebSocket(WS_URL);
+    const { states, isConnected, sendMessage, socketRef, connect } = useWebSocket(WS_URL);
     const [isRunning, setIsRunning] = useState(false);
 
     const handleStart = () => {
         if (!isRunning) {
-            sendMessage({ action: 'start' });
-            setIsRunning(true);
+          if (!isConnected) {
+            connect(true); // 🔥 Reconnecter le WebSocket s'il est fermé
+        }
+          else{
+          sendMessage({ action: 'start' });
+          console.log('Message Start Sent')
+          }
+        setIsRunning(true);
         }
     };
 
@@ -27,6 +33,7 @@ const App: React.FC = () => {
         if (isRunning) {
             fetch('http://localhost:8000/stop-inference', { method: 'POST' });
             setIsRunning(false);
+            socketRef.current?.close(); // ⬅️ Fermeture explicite
         }
     };
 
