@@ -1,37 +1,49 @@
-import React, { useEffect } from 'react';
-import './App.css';
+
+import React, { useState } from 'react';
 import EnvironmentVisualization from './components/EnvironmentVisualization';
 import EnvironmentController from './components/EnvironmentController';
 import useWebSocket from './hooks/useWebSocket';
 
+const WS_URL = 'ws://localhost:8000/ws';
+
 const App: React.FC = () => {
-  // Définir l'URL du WebSocket
-  const url = "ws://localhost:8000/ws"; 
-  const { gameState, sendGameState } = useWebSocket(url);
+    const { state, isConnected, sendMessage } = useWebSocket(WS_URL);
+    const [isRunning, setIsRunning] = useState(false);
 
-  useEffect(() => {
-    // ✅ Envoi automatique du gameState toutes les secondes
-    const interval = setInterval(() => {
-      if (gameState) {
-        console.log('Sending game state from App:', gameState);
-        sendGameState(gameState);
-      }
-    }, 1000); // Toutes les 1 seconde
+    const handleStart = () => {
+        if (!isRunning) {
+            sendMessage({ action: 'start' });
+            setIsRunning(true);
+        }
+    };
 
-    return () => clearInterval(interval); // Nettoyage lors du démontage du composant
-  }, [gameState, sendGameState]);
+    const handlePause = () => {
+        if (isRunning) {
+            sendMessage({ action: 'pause' });
+            setIsRunning(false);
+        }
+    };
 
-  return (
-    <div className="App">
-      <h1>Snake AI Platform</h1>
-      
-      {/* 🎮 Zone d'affichage du jeu */}
-      {gameState && <EnvironmentVisualization gameState={gameState} />}
-      
-      {/* 🕹️ Zone de contrôle */}
-      <EnvironmentController sendGameState={sendGameState} />
-    </div>
-  );
+    const handleStop = () => {
+        if (isRunning) {
+            fetch('http://localhost:8000/stop-inference', { method: 'POST' });
+            setIsRunning(false);
+        }
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <h1>Snake AI</h1>
+            <EnvironmentVisualization state={state} />
+            <EnvironmentController
+                onStart={handleStart}
+                onPause={handlePause}
+                onStop={handleStop}
+                isRunning={isRunning}
+            />
+            <div>Connection status: {isConnected ? 'Connected' : 'Disconnected'}</div>
+        </div>
+    );
 };
 
 export default App;

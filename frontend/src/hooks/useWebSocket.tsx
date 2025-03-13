@@ -1,53 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
 
-interface GameState {
-  snake: { x: number; y: number }[];
-  food: { x: number; y: number };
-  score: number;
-}
+import { useEffect, useState, useRef } from 'react';
 
 const useWebSocket = (url: string) => {
-  const socket = useRef<WebSocket | null>(null);
-  const [gameState, setGameState] = useState<GameState | null>(null);
+    const [state, setState] = useState<number[]>([0, 0, 0, 0]);
+    const [isConnected, setIsConnected] = useState(false);
+    const socketRef = useRef<WebSocket | null>(null);
 
-  useEffect(() => {
-    socket.current = new WebSocket(url);
+    useEffect(() => {
+        socketRef.current = new WebSocket(url);
 
-    socket.current.onopen = () => {
-      console.log('WebSocket connected');
+        socketRef.current.onopen = () => {
+            console.log('Connected to WebSocket');
+            setIsConnected(true);
+        };
+
+        socketRef.current.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Envoie du state')
+            setState(data.state);
+            console.log(data.state)
+
+        };
+
+        socketRef.current.onclose = () => {
+            console.log('Disconnected from WebSocket');
+            setIsConnected(false);
+        };
+
+        socketRef.current.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        return () => {
+            socketRef.current?.close();
+        };
+    }, [url]);
+
+    const sendMessage = (message: object) => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify(message));
+        }
     };
 
-    socket.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received data:', data);
-      setGameState(data);
-    };
-
-    socket.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    socket.current.onclose = () => {
-      console.log('WebSocket disconnected. Reconnecting...');
-      setTimeout(() => {
-        socket.current = new WebSocket(url);
-      }, 1000); // Reconnexion après 1 seconde
-    };
-
-    return () => {
-      socket.current?.close();
-    };
-  }, [url]);
-
-  const sendGameState = (state: GameState) => {
-    if (socket.current && socket.current.readyState === WebSocket.OPEN) {
-      console.log("Sending game state:", state); // ✅ Vérification
-      socket.current.send(JSON.stringify(state));
-    }
-  };
-  
-
-  return { gameState, sendGameState };
+    return { state, isConnected, sendMessage };
 };
 
 export default useWebSocket;
