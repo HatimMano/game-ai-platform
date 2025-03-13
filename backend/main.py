@@ -117,6 +117,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # ✅ Force FastAPI à garder le contexte ouvert
                 await asyncio.sleep(3600)
+        
+        elif data.get("action") == "pause":
+                print("⏸️ Réception de la commande PAUSE")
+                inference_active = False  # Arrête l'inférence
+                if inference_task is not None:
+                    inference_task.cancel()  # Annule la tâche en cours
+                    inference_task = None
 
     except WebSocketDisconnect:
         print("❌ Connexion WebSocket fermée par le client")

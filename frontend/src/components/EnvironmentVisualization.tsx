@@ -2,14 +2,15 @@ import React, { useEffect, useRef } from 'react';
 
 interface Props {
     states: number[][]; // Reçoit tous les états
+    isRunning: boolean; // Ajoute une prop pour savoir si le jeu est en cours
 }
 
-const EnvironmentVisualization: React.FC<Props> = ({ states }) => {
+const EnvironmentVisualization: React.FC<Props> = ({ states, isRunning }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const gridSize = 10;
     const cellSize = 40;
     const animationRef = useRef<number | null>(null);
-    const currentStateIndexRef = useRef<number>(0); // Index de l'état actuel à afficher
+    const currentStateIndexRef = useRef<number>(0);
 
     const drawCanvas = (state: number[]) => {
         const canvas = canvasRef.current;
@@ -33,9 +34,9 @@ const EnvironmentVisualization: React.FC<Props> = ({ states }) => {
 
     useEffect(() => {
         const renderFrame = () => {
-            if (states.length > 0 && currentStateIndexRef.current < states.length) {
+            if (isRunning && states.length > 0 && currentStateIndexRef.current < states.length) {
                 drawCanvas(states[currentStateIndexRef.current]);
-                currentStateIndexRef.current += 1; // Passe à l'état suivant
+                currentStateIndexRef.current += 1;
             }
             animationRef.current = requestAnimationFrame(renderFrame);
         };
@@ -47,7 +48,7 @@ const EnvironmentVisualization: React.FC<Props> = ({ states }) => {
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [states]);
+    }, [states, isRunning]); // Dépend de `isRunning`
 
     return (
         <canvas

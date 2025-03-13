@@ -33,7 +33,7 @@ const App: React.FC = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
             <h1>Snake AI</h1>
-            <EnvironmentVisualization states={states} />
+            <EnvironmentVisualization states={states} isRunning={isRunning} />
             <EnvironmentController
                 onStart={handleStart}
                 onPause={handlePause}
