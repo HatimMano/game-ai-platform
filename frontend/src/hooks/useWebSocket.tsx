@@ -1,8 +1,7 @@
-
 import { useEffect, useState, useRef } from 'react';
 
 const useWebSocket = (url: string) => {
-    const [state, setState] = useState<number[]>([0, 0, 0, 0]);
+    const [states, setStates] = useState<number[][]>([]); // Stocke tous les états reçus
     const [isConnected, setIsConnected] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
 
@@ -16,10 +15,7 @@ const useWebSocket = (url: string) => {
 
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            console.log('Envoie du state')
-            setState(data.state);
-            console.log(data.state)
-
+            setStates((prevStates) => [...prevStates, data.state]); // Ajoute le nouvel état à la file d'attente
         };
 
         socketRef.current.onclose = () => {
@@ -42,7 +38,7 @@ const useWebSocket = (url: string) => {
         }
     };
 
-    return { state, isConnected, sendMessage };
+    return { states, isConnected, sendMessage };
 };
 
 export default useWebSocket;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import EnvironmentVisualization from './components/EnvironmentVisualization';
 import EnvironmentController from './components/EnvironmentController';
@@ -7,7 +6,7 @@ import useWebSocket from './hooks/useWebSocket';
 const WS_URL = 'ws://localhost:8000/ws';
 
 const App: React.FC = () => {
-    const { state, isConnected, sendMessage } = useWebSocket(WS_URL);
+    const { states, isConnected, sendMessage } = useWebSocket(WS_URL);
     const [isRunning, setIsRunning] = useState(false);
 
     const handleStart = () => {
@@ -34,7 +33,7 @@ const App: React.FC = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
             <h1>Snake AI</h1>
-            <EnvironmentVisualization state={state} />
+            <EnvironmentVisualization states={states} />
             <EnvironmentController
                 onStart={handleStart}
                 onPause={handlePause}

@@ -139,4 +139,3 @@ async def stop_inference():
         inference_task.cancel()
         inference_task = None
     return {"status": "Inference stopped"}
-
