@@ -22,6 +22,9 @@ class SnakeEnv(BaseGameEnv):
         """Exécute une action et met à jour l'état du jeu."""
         if self.done:
             return self.get_state(), -10, True
+        
+        # Calcul de la distance avant le déplacement
+        old_distance = abs(self.food_pos[0] - self.snake_pos[0]) + abs(self.food_pos[1] - self.snake_pos[1])
 
         new_head = self.snake_pos.copy()
         if action == 0: new_head[1] -= 1  # Haut
@@ -32,20 +35,32 @@ class SnakeEnv(BaseGameEnv):
         if (new_head[0] < 0 or new_head[0] >= self.grid_size or
             new_head[1] < 0 or new_head[1] >= self.grid_size) :
             self.done = True
-            return self.get_state(), -50, self.done  # Pénalité pour collision
+            return self.get_state(), -10, self.done  # Pénalité pour collision
         
         elif (new_head in self.snake_body[:-1]):
             self.done = True
-            return self.get_state(), -50, self.done  # Pénalité pour collision
+            return self.get_state(), -10, self.done  # Pénalité pour collision
+        
+        # Calcul de la nouvelle distance
+        new_distance = abs(self.food_pos[0] - self.snake_pos[0]) + abs(self.food_pos[1] - self.snake_pos[1])
+
+        # Récompense basée sur la distance
+        if new_distance < old_distance:
+            distance_reward = 2  # Récompense pour se rapprocher
+        elif new_distance > old_distance:
+            distance_reward = -2  # Pénalité pour s'éloigner
+        else:
+            distance_reward = 0  # Pas de changement
 
         self.snake_body.insert(0, new_head)
         self.snake_pos = new_head
 
         reward = -0.01
         if new_head == self.food_pos:
-            reward = 100
+            reward = 10 + distance_reward
             self.food_pos = self._generate_food()
         else:
+            reward = distance_reward
             self.snake_body.pop()
 
         return self.get_state(), reward, self.done

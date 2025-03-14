@@ -16,9 +16,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # Imports après l'ajout du PYTHONPATH
 from agents.base_agent import BaseAgent
 
-def default_q_values(action_space_size):
-    """Retourne un tableau de zéros correspondant au nombre d'actions possibles."""
-    return np.zeros(action_space_size)
 
 
 class QLearningAgent(BaseAgent):
@@ -34,18 +31,23 @@ class QLearningAgent(BaseAgent):
         self.alpha = params["alpha"]  
         self.gamma = params["gamma"]  
         self.epsilon = params["epsilon"]  
+        self.epsilon_inference = params["epsilon_inference"]  
         self.epsilon_min = params["epsilon_min"]  
         self.epsilon_decay = params["epsilon_decay"]  
-        self.Q_table = defaultdict(lambda: np.zeros(env.action_space.n))
+        self.Q_table = defaultdict(self.default_q_values)
 
         # ✅ Variables d'état
         self.current_episode = 0
         self.current_state = None
         self.training_active = False
+    
+    def default_q_values(self):
+        """Retourne un tableau de zéros correspondant au nombre d'actions possibles."""
+        return np.zeros(self.env.action_space.n)
 
-    def choose_action(self, state, epsilon=None):
+    def choose_action(self, state, inference=False):
         """Sélectionne une action selon une stratégie epsilon-greedy."""
-        epsilon = epsilon if epsilon is not None else self.epsilon
+        epsilon = self.epsilon_inference if inference else self.epsilon
         if random.uniform(0, 1) < epsilon:
             return self.env.action_space.sample()  # Exploration
         if state not in self.Q_table:
@@ -66,8 +68,10 @@ class QLearningAgent(BaseAgent):
             total_reward = 0
 
             while not done and self.training_active:
+                print("first" + str(done))
                 action = self.choose_action(state)
                 next_state, reward, done = self.env.step(action)
+                print("2nd" + str(done))
                 next_state = tuple(next_state)
 
                 if next_state not in self.Q_table:
@@ -110,3 +114,19 @@ class QLearningAgent(BaseAgent):
     def set_model(self, model):
         """Définit la table Q après chargement."""
         self.Q_table = model
+
+    def load_model(self, model_path=None):
+        if model_path is None:
+            model_path = os.path.join("models", "q_learning", "model.pkl")
+        
+        if os.path.exists(model_path):
+            print(f"📥 Chargement du modèle depuis {model_path}...")
+            with open(model_path, "rb") as f:
+                self.Q_table = pickle.load(f)
+            print(f"✅ Modèle chargé → Taille Q-table : {len(self.Q_table)}")
+            sample_keys = list(self.Q_table.keys())[:5]
+            for key in sample_keys:
+                print(f"État : {key} → Valeurs Q : {self.Q_table[key]}")
+        else:
+            print("⚠️ Aucun modèle trouvé → Initialisation d'un modèle vide")
+            self.Q_table = defaultdict(self.default_q_values)

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 
 interface Props {
-    states: number[][]; // Reçoit tous les états
-    isRunning: boolean; // Ajoute une prop pour savoir si le jeu est en cours
+    states: number[][]; 
+    isRunning: boolean; 
 }
 
 const EnvironmentVisualization: React.FC<Props> = ({ states, isRunning }) => {
@@ -23,11 +23,9 @@ const EnvironmentVisualization: React.FC<Props> = ({ states, isRunning }) => {
 
         const [snakeX, snakeY, foodX, foodY] = state;
 
-        // Dessiner le serpent
         ctx.fillStyle = 'green';
         ctx.fillRect(snakeX * cellSize, snakeY * cellSize, cellSize, cellSize);
 
-        // Dessiner la nourriture
         ctx.fillStyle = 'red';
         ctx.fillRect(foodX * cellSize, foodY * cellSize, cellSize, cellSize);
     };
@@ -48,14 +46,13 @@ const EnvironmentVisualization: React.FC<Props> = ({ states, isRunning }) => {
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [states, isRunning]); // Dépend de `isRunning`
+    }, [states, isRunning]);
 
     return (
         <canvas
             ref={canvasRef}
             width={gridSize * cellSize}
             height={gridSize * cellSize}
-            style={{ border: '2px solid black' }}
         />
     );
 };

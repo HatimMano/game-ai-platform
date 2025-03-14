@@ -3,7 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 const useWebSocket = (url: string) => {
     const [states, setStates] = useState<number[][]>([]);
     const [isConnected, setIsConnected] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
+
 
     const connect = (autoStart = false) => {
         if (socketRef.current) {
@@ -15,8 +17,7 @@ const useWebSocket = (url: string) => {
         socketRef.current.onopen = () => {
             console.log('Connected to WebSocket');
             setIsConnected(true);
-            setStates([]); // Réinitialiser les états lors d'une nouvelle connexion
-        };
+            };
 
         if (autoStart) {
             // ✅ Utiliser un léger timeout pour s'assurer que l'état est bien mis à jour
@@ -28,12 +29,18 @@ const useWebSocket = (url: string) => {
 
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            setStates((prevStates) => [...prevStates, data.state]);
+        
+            // 🛑 Bloquer la mise à jour si le jeu est en pause
+            if (!isPaused) {
+                setStates((prevStates) => [...prevStates, data.state]);
+            }
         };
+        
 
         socketRef.current.onclose = () => {
             console.log('Disconnected from WebSocket');
             setIsConnected(false);
+            setStates([]);
         };
 
         socketRef.current.onerror = (error) => {
@@ -55,7 +62,7 @@ const useWebSocket = (url: string) => {
         }
     };
 
-    return { states, isConnected, sendMessage, socketRef, connect };
+    return { states, isConnected, sendMessage, socketRef, connect, setIsPaused };
 };
 
 export default useWebSocket;

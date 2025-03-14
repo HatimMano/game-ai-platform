@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import EnvironmentVisualization from './components/EnvironmentVisualization';
 import EnvironmentController from './components/EnvironmentController';
 import useWebSocket from './hooks/useWebSocket';
 
@@ -17,7 +16,6 @@ const App: React.FC = () => {
                 connect(true);
             } else {
                 sendMessage({ action: 'start' });
-                console.log('Message Start Sent');
             }
             setIsRunning(true);
         }
@@ -47,7 +45,6 @@ const App: React.FC = () => {
                 method: 'POST',
             });
             if (response.ok) {
-                console.log('Training started');
                 setIsTraining(true);
             }
         } catch (error) {
@@ -62,7 +59,6 @@ const App: React.FC = () => {
                 method: 'POST',
             });
             if (response.ok) {
-                console.log('Training stopped');
                 setIsTraining(false);
             }
         } catch (error) {
@@ -85,21 +81,18 @@ const App: React.FC = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            <h1>Snake AI</h1>
-            <EnvironmentVisualization states={states} isRunning={isRunning} />
-            <EnvironmentController
-                onStart={handleStart}
-                onPause={handlePause}
-                onStop={handleStop}
-                isRunning={isRunning}
-                onStartTraining={handleStartTraining}
-                onStopTraining={handleStopTraining}
-                onSaveModel={handleSaveModel}
-                isTraining={isTraining}
-            />
-            <div>Connection status: {isConnected ? 'Connected' : 'Disconnected'}</div>
-        </div>
+        <EnvironmentController
+            onStart={handleStart}
+            onPause={handlePause}
+            onStop={handleStop}
+            isRunning={isRunning}
+            onStartTraining={handleStartTraining}
+            onStopTraining={handleStopTraining}
+            onSaveModel={handleSaveModel}
+            isTraining={isTraining}
+            isConnected={isConnected}
+            states={states}
+        />
     );
 };
 
