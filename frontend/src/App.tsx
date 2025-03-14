@@ -9,7 +9,6 @@ const App: React.FC = () => {
     const [isRunning, setIsRunning] = useState(false);
     const [isTraining, setIsTraining] = useState(false);
 
-    // ⭐ Start Game
     const handleStart = () => {
         if (!isRunning) {
             if (!isConnected) {
@@ -21,7 +20,6 @@ const App: React.FC = () => {
         }
     };
 
-    // ⭐ Pause Game
     const handlePause = () => {
         if (isRunning) {
             sendMessage({ action: 'pause' });
@@ -29,7 +27,6 @@ const App: React.FC = () => {
         }
     };
 
-    // ⭐ Stop Game
     const handleStop = () => {
         if (isRunning) {
             fetch('http://localhost:8000/stop-inference', { method: 'POST' });
@@ -38,43 +35,34 @@ const App: React.FC = () => {
         }
     };
 
-    // ⭐ Start Training
     const handleStartTraining = async () => {
         try {
             const response = await fetch('http://localhost:8000/start-training', {
                 method: 'POST',
             });
-            if (response.ok) {
-                setIsTraining(true);
-            }
+            if (response.ok) setIsTraining(true);
         } catch (error) {
             console.error('Failed to start training:', error);
         }
     };
 
-    // ⭐ Stop Training
     const handleStopTraining = async () => {
         try {
             const response = await fetch('http://localhost:8000/stop-training', {
                 method: 'POST',
             });
-            if (response.ok) {
-                setIsTraining(false);
-            }
+            if (response.ok) setIsTraining(false);
         } catch (error) {
             console.error('Failed to stop training:', error);
         }
     };
 
-    // ⭐ Save Model
     const handleSaveModel = async () => {
         try {
             const response = await fetch('http://localhost:8000/save-model', {
                 method: 'POST',
             });
-            if (response.ok) {
-                console.log('Model saved');
-            }
+            if (response.ok) console.log('Model saved');
         } catch (error) {
             console.error('Failed to save model:', error);
         }

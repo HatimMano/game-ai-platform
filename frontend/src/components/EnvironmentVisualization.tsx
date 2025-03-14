@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 
 interface Props {
-    states: number[][]; 
-    isRunning: boolean; 
+    states: number[][];
+    isRunning: boolean;
 }
 
 const EnvironmentVisualization: React.FC<Props> = ({ states, isRunning }) => {

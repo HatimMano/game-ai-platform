@@ -1,19 +1,18 @@
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-import asyncio
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from games.snake.snake_env import SnakeEnv
 from agents.q_learning.q_learning_agent import QLearningAgent
 import pickle
-from starlette.websockets import WebSocketState, WebSocketDisconnect
-
+from starlette.websockets import WebSocketState # type: ignore
 
 app = FastAPI()
 
-# CORS (pour permettre le front React de se connecter)
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,75 +21,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize environment and agent
 env = SnakeEnv(grid_size=10)
 agent = QLearningAgent(env)
 
-# Variables de contrôle
+# Control variables
 training_active = False
 inference_active = False
 inference_task = None
 
-
-
-# Démarrage du training
-# Démarrage du training
 @app.post("/start-training")
 async def start_training(episodes: int = 1000):
+    """Start the training loop."""
     global training_active
     if training_active:
         return {"status": "Training already in progress"}
 
     training_active = True
     agent.training_active = True
-    
-    print("🚀 Début du training...")
     asyncio.create_task(agent.train(episodes))
-    
     return {"status": "Training started"}
 
-# Arrêt du training
 @app.post("/stop-training")
 async def stop_training():
+    """Stop the training loop."""
     global training_active
     if not training_active:
         return {"status": "No training in progress"}
-    
+
     training_active = False
     agent.stop_training()
-    
     return {"status": "Training stopped"}
 
-# Sauvegarde du modèle
 @app.post("/save-model")
 async def save_model():
+    """Save the Q-learning model to file."""
     global training_active
     if training_active:
         return {"status": "Cannot save model during training"}
 
-    model_path = os.path.join("backend", "models", "q_learning", "model.pkl")
+    model_path = os.path.join("models", "q_learning", "model.pkl")
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     with open(model_path, "wb") as f:
         pickle.dump(agent.get_model(), f)
 
-    print("💾 Model saved")
     return {"status": "Model saved"}
-
-
-# Sauvegarde du modèle
-@app.post("/save-model")
-async def save_model():
-    model_path = os.path.join("backend", "models", "q_learning", "model.pkl")
-    os.makedirs(os.path.dirname(model_path), exist_ok=True)
-    with open(model_path, "wb") as f:
-        pickle.dump(agent.get_model(), f)
-    return {"status": "Model saved"}
-
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    """Handle WebSocket connection for inference."""
     global inference_active, inference_task
     await websocket.accept()
-    print("Connexion WebSocket établie")
 
     try:
         data = await websocket.receive_json()
@@ -98,70 +79,38 @@ async def websocket_endpoint(websocket: WebSocket):
         if data.get("action") == "start":
             inference_active = True
             state = tuple(env.reset())
-            print("Envoie du state initial")
-            print(state)
-
-            try:
-                if websocket.client_state == WebSocketState.CONNECTED:
-                    print('✅ WebSocket est encore connecté')
-                    await websocket.send_json({"state": state, "done": False})
-            except Exception as e:
-                print(f"❌ Erreur lors de l'envoi initial : {e}")
+            await websocket.send_json({"state": state, "done": False})
 
             async def run_inference(initial_state):
                 global inference_active
-                try:
-                    state = initial_state
-                    print("🚀 Début de la boucle d'inférence")
+                state = initial_state
 
-                    while inference_active and websocket.client_state == WebSocketState.CONNECTED:
-                        print("🔄 Boucle en cours...")
-                        action = agent.choose_action(state)
-                        next_state, reward, done = env.step(action)
-                        await websocket.send_json({
-                            "state": next_state,
-                            "reward": reward,
-                            "done": done
-                        })
+                while inference_active and websocket.client_state == WebSocketState.CONNECTED:
+                    action = agent.choose_action(state)
+                    next_state, reward, done = env.step(action)
+                    await websocket.send_json({"state": next_state, "reward": reward, "done": done})
+                    state = next_state
 
-                        state = next_state
-                        if done:
-                            state = tuple(env.reset())
-                            await asyncio.sleep(1)
+                    if done:
+                        state = tuple(env.reset())
 
-                except Exception as e:
-                    print(f"❌ Erreur dans run_inference : {e}")
-                finally:
-                    inference_active = False
-                    print("🏁 Fin de la boucle d'inférence")
-
-            # ✅ Crée la boucle d'inférence
             if inference_task is None or inference_task.done():
                 inference_task = asyncio.create_task(run_inference(state))
-                print(f"🚀 Tâche lancée : {inference_task}")
-
-                # ✅ Force FastAPI à garder le contexte ouvert
                 await asyncio.sleep(3600)
-        
+
         elif data.get("action") == "pause":
-                print("⏸️ Réception de la commande PAUSE")
-                inference_active = False  # Arrête l'inférence
-                if inference_task is not None:
-                    inference_task.cancel()  # Annule la tâche en cours
-                    inference_task = None
+            inference_active = False
+            if inference_task is not None:
+                inference_task.cancel()
+                inference_task = None
 
     except WebSocketDisconnect:
-        print("❌ Connexion WebSocket fermée par le client")
         inference_active = False
-
-    except Exception as e:
-        print(f"❌ WebSocket Error: {e}")
-
 
 @app.post("/stop-inference")
 async def stop_inference():
+    """Stop the inference loop."""
     global inference_active, inference_task
-    print("🛑 Réception de la commande STOP")
     inference_active = False
     if inference_task is not None:
         inference_task.cancel()
